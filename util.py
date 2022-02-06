@@ -1,6 +1,8 @@
 import pyautogui
 import time
 import cv2
+import pickle
+import csv
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,10 +104,11 @@ def update_wordlist(_cur_wordlist, _correct, _contained, _incorrect):
 
 
 def solve(word_list, all_words, _freqs, _correct, _contained, _incorrect):
-    result = guess_info(list(_contained.keys())
+    """result = guess_info(list(_contained.keys())
                         + list(_correct.keys())
                         + list(_incorrect), _freqs, all_words)
-    return result if result != "" else guess_solve(word_list, _freqs)
+    return result if result != "" else guess_solve(word_list, _freqs)"""
+    return guess_solve(word_list, _freqs)
 
 
 def enter_guess(_str):
@@ -192,6 +195,17 @@ def find_grid():
 def test():
     while True:
         print(pyautogui.position())
+
+
+def load_words(_str):
+    if _str == "pkl":
+        with open(f"5-letter-combinations.pkl", "rb") as f:
+            all_words = pickle.load(f)
+    elif _str == "wordlelist":
+        with open("wordlelist.csv", newline="") as f:
+            csvreader = csv.reader(f, delimiter=",")
+            all_words = list(csvreader)[0]
+    return all_words
 
 
 if __name__ == "__main__":

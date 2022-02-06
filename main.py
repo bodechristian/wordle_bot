@@ -6,8 +6,7 @@ from util import *
 
 # initialize stuff
 nb_letters = 5
-with open(f"{nb_letters}-letter-combinations.pkl", "rb") as f:
-    all_words = pickle.load(f)
+all_words = load_words("wordlelist")
 wordlist = all_words.copy()
 
 frequency_table = {i: Counter() for i in range(nb_letters)}
