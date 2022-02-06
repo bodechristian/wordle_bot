@@ -19,9 +19,11 @@ letters_correct = {}
 letters_contained = defaultdict(list)
 letters_incorrect = ""
 
-# wait a bit and then change focus to last window
+
+# wait a bit and then click where the grid has been detected
 time.sleep(1)
-alt_tab()
+view = find_grid()
+pyautogui.click(view["left"], view["top"])
 time.sleep(1)
 
 # do the 6 guesses
@@ -31,5 +33,6 @@ for nb_guess in range(6):
     guess = solve(wordlist, all_words, frequency_table, letters_correct, letters_contained, letters_incorrect)
     print(f"Guessing {guess}")
     enter_guess(guess)
-    letters_correct, letters_contained, letters_incorrect = update_data(nb_guess, guess, letters_correct, letters_contained, letters_incorrect)
+    letters_correct, letters_contained, letters_incorrect = update_data(nb_guess, guess, view,
+                                                                        letters_correct, letters_contained, letters_incorrect)
     print()

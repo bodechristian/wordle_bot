@@ -117,22 +117,16 @@ def enter_guess(_str):
     time.sleep(3)
 
 
-def update_data(_nb_guess, _guess, _correct, _contained, _incorrect):
+def update_data(_nb_guess, _guess, _view, _correct, _contained, _incorrect):
     with mss() as sct:
-        # TODO: optimally have this be detected automatically
-        # can use sct.monitors[0] for all screens in 1 picture
-        # then find the grid
-        # then move it slightly so that top left corner is inside a cell to pick up colour
-        mon = sct.monitors[1]
-        grid_view = {"left": mon["left"] + 760, 'top': 330, 'width': 340, 'height': 420}
-        ss = sct.grab(grid_view)
-        # colour correction
+        ss = sct.grab(_view)
+        # colour correct
         img = Image.frombytes(
             'RGB',
             (ss.width, ss.height),
             ss.rgb,
         )
-        cell_height, cell_width = grid_view["height"] / 6, grid_view["width"] / 5
+        cell_height, cell_width = _view["height"] / 6, _view["width"] / 5
 
         results = []
         for idx_letter in range(5):
@@ -157,23 +151,49 @@ def draw_reading_points():
         mon = sct.monitors[1]
         grid_view = {"left": mon["left"] + 765, 'top': 335, 'width': 340, 'height': 410}
         ss = sct.grab(grid_view)
-        # colour correction
-        img = Image.frombytes(
-            'RGB',
-            (ss.width, ss.height),
-            ss.rgb,
-        )
+        ss = Image.frombytes('RGB', (ss.width, ss.height), ss.rgb, )
+        img = pil2cv(ss)
+
         cell_height, cell_width = grid_view["height"] / 6, grid_view["width"] / 5
-
-        plt.imshow(img)
-        plt.savefig("grid")
-
         for idx_letter in range(5):
             for j in range(6):
-                img.putpixel((int(idx_letter*cell_width), int(j*cell_height)), (255, 105, 180))
+                ss.putpixel((int(idx_letter*cell_width), int(j*cell_height)), (255, 105, 180))
+        plt.imshow(ss)
+        plt.show()
+
+        cv2.imwrite("grid.png", img)
         plt.imshow(img)
         plt.show()
 
 
+def pil2cv(img):
+    img = np.array(img)
+    img = img[:, :, ::-1].copy()
+    return img
+
+
+def find_grid():
+    with mss() as sct:
+        # can use sct.monitors[0] for all screens in 1 picture
+        # then find the grid
+        mon = sct.monitors[0]
+        ss = sct.grab(mon)
+        ss = Image.frombytes('RGB', (ss.width, ss.height), ss.rgb, )
+        img = pil2cv(ss)
+
+        template = cv2.imread("grid.png")
+        result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+        _, _, _, max_loc = cv2.minMaxLoc(result)
+
+        grid_view = {"left": mon["left"] + max_loc[0], 'top': mon["top"] + max_loc[1], 'width': 340, 'height': 420}
+        return grid_view
+
+
+def test():
+    while True:
+        print(pyautogui.position())
+
+
 if __name__ == "__main__":
-    draw_reading_points()
+    # draw_reading_points()
+    test()
