@@ -9,12 +9,9 @@ nb_letters = 5
 all_words = load_words("wordlelist")
 wordlist = all_words.copy()
 
-frequency_table = {i: Counter() for i in range(nb_letters)}
-for word in all_words:
-    for i, letter in enumerate(word):
-        frequency_table[i][letter] += 1
+frequency_table = get_freqs(all_words)
 
-letters_correct = {}
+letters_correct = defaultdict(list)
 letters_contained = defaultdict(list)
 letters_incorrect = ""
 
@@ -29,9 +26,14 @@ time.sleep(1)
 for nb_guess in range(6):
     print(f"Guess {nb_guess+1}:")
     wordlist = update_wordlist(wordlist, letters_correct, letters_contained, letters_incorrect)
-    guess = solve(wordlist, all_words, frequency_table, letters_correct, letters_contained, letters_incorrect)
+    guess = solve(wordlist, all_words, frequency_table, nb_guess, letters_correct, letters_contained, letters_incorrect)
     print(f"Guessing {guess}")
     enter_guess(guess)
-    letters_correct, letters_contained, letters_incorrect = update_data(nb_guess, guess, view,
+    solved, letters_correct, letters_contained, letters_incorrect = update_data(nb_guess, guess, view,
                                                                         letters_correct, letters_contained, letters_incorrect)
+    if solved:
+        print("\n--------------")
+        print("Correct!!!")
+        print(f"The correct guess was {guess}")
+        break
     print()

@@ -7,7 +7,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from PIL import Image
 from mss import mss
 
@@ -29,6 +29,18 @@ def alt_tab():
     pyautogui.press('tab')
     time.sleep(.2)
     pyautogui.keyUp('alt')
+
+
+def get_freqs(_words):
+    length = 0
+    for el in _words:
+        length = len(el)
+        break
+    freqs = {i: Counter() for i in range(length)}
+    for word in _words:
+        for i, letter in enumerate(word):
+            freqs[i][letter] += 1
+    return freqs
 
 
 def calc_score(_freqs, _word):
@@ -83,12 +95,13 @@ def update_wordlist(_cur_wordlist, _correct, _contained, _incorrect):
     for word in _cur_wordlist:
         keep = True
 
-        for letter, idx in _correct.items():
-            if not word[idx] == letter:
-                keep = False
+        for letter, idxs in _correct.items():
+            for idx in idxs:
+                if not word[idx] == letter:
+                    keep = False
 
         for letter, idxs in _contained.items():
-            if not letter in word:
+            if letter not in word:
                 keep = False
             for idx in idxs:
                 if word[idx] == letter:
@@ -103,12 +116,14 @@ def update_wordlist(_cur_wordlist, _correct, _contained, _incorrect):
     return new_wordlist
 
 
-def solve(word_list, all_words, _freqs, _correct, _contained, _incorrect):
-    """result = guess_info(list(_contained.keys())
+def solve(word_list, all_words, _freqs, nb_guess, _correct, _contained, _incorrect):
+    if len((result := guess_solve(word_list, _freqs))) == 1:
+        return result
+    result = guess_info(list(_contained.keys())
                         + list(_correct.keys())
                         + list(_incorrect), _freqs, all_words)
-    return result if result != "" else guess_solve(word_list, _freqs)"""
-    return guess_solve(word_list, _freqs)
+    return result if result != "" else guess_solve(word_list, _freqs)
+    #return guess_solve(word_list, _freqs)
 
 
 def enter_guess(_str):
@@ -138,15 +153,20 @@ def update_data(_nb_guess, _guess, _view, _correct, _contained, _incorrect):
         results_colours = list(map(lambda x: COLORS[x], results))
         print(results_colours)
 
+        # correct guess
+        solved = False
+        if all([_col == "green" for _col in results_colours]):
+            solved = True
+
         for i, col in enumerate(results_colours):
             if col == "green":
-                _correct[_guess[i]] = i
+                _correct[_guess[i]].append(i)
             elif col == "yellow":
                 _contained[_guess[i]].append(i)
             elif col == "gray":
                 _incorrect += _guess[i]
 
-        return _correct, _contained, _incorrect
+        return solved, _correct, _contained, _incorrect
 
 
 def draw_reading_points():
