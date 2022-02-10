@@ -31,26 +31,37 @@ def alt_tab():
     pyautogui.keyUp('alt')
 
 
-def get_freqs(_words):
-    length = 0
-    for el in _words:
-        length = len(el)
-        break
-    freqs = {i: Counter() for i in range(length)}
+def get_freqs_slots(_words):
+    freqs = {i: Counter() for i in range(5)}
     for word in _words:
         for i, letter in enumerate(word):
             freqs[i][letter] += 1
     return freqs
 
 
-def calc_score(_freqs, _word):
+def get_freqs_words(_words):
+    _freqs = Counter()
+    for _word in _words:
+        for _letter in set(_word):
+            _freqs[_letter] += 1
+    return _freqs
+
+
+def calc_score_slots(_freqs, _word):
     _res = 0
     for i, letter in enumerate(_word):
         _res += _freqs[i][letter]
     return _res
 
 
-def guess_info(used_letters, _freqs, all_words):
+def calc_score_words(_freqs, _word):
+    _res = 0
+    for _letter in _word:
+        _res += _freqs[_letter]
+    return _res
+
+
+def guess_info(used_letters, _freqs, all_words, func_calc_score):
     """
     go over list and calculate letter-frequency per slot
     calculate score for each word
@@ -63,7 +74,7 @@ def guess_info(used_letters, _freqs, all_words):
         # ignore words with already investigated letters or without 5 distinct letters
         if any([_letter in word for _letter in used_letters]) or len(set(word)) < 5:
             continue
-        score = calc_score(_freqs, word)
+        score = func_calc_score(_freqs, word)
         # save word if new max but
         if score >= max_score:
             max_score = score
@@ -71,7 +82,28 @@ def guess_info(used_letters, _freqs, all_words):
     return max_word
 
 
-def guess_solve(words, _freqs):
+def guess_info_yolo(used_letters, _freqs, all_words, func_calc_score):
+    """
+    go over list and calculate letter-frequency per slot
+    calculate score for each word
+    return word with max score - but ignore words with letters already used or double letters
+    @param: iterable of possible words
+    @param: iterable of letters that are contained/correct in the target word
+    """
+    min_score, min_word = float("inf"), ""
+    for word in all_words:
+        # ignore words with already investigated letters or without 5 distinct letters
+        if any([_letter in word for _letter in used_letters]) or len(set(word)) < 5:
+            continue
+        score = func_calc_score(_freqs, word)
+        # save word if new min but
+        if score <= min_score:
+            min_score = score
+            min_word = word
+    return min_word
+
+
+def guess_solve(words, _freqs, func_calc_score, debug=False):
     """
     go over list and calculate letter-frequency per slot
     calculate score for each word
@@ -79,9 +111,10 @@ def guess_solve(words, _freqs):
     @param: iterable of possible words
     """
     max_score, max_word = 0, ""
-    print(words)
+    if debug:
+        print(words)
     for word in words:
-        score = calc_score(_freqs, word)
+        score = func_calc_score(_freqs, word)
         # save word if new max
         if score >= max_score:
             max_score = score
@@ -89,9 +122,48 @@ def guess_solve(words, _freqs):
     return max_word
 
 
-def update_wordlist(_cur_wordlist, _correct, _contained, _incorrect):
-    new_wordlist = set()
+def solve_infoguesses(word_list, all_words, _freqs, _data, func_calc_score, yolo=False, debug=False):
+    _correct, _contained, _incorrect = _data
+    if debug:
+        print(word_list)
+    if len(word_list) == 1:
+        return list(word_list)[0]
+    if yolo:
+        result = guess_info_yolo(list(_contained.keys())
+                                 + list(_correct.keys())
+                                 + list(_incorrect), _freqs, all_words, func_calc_score)
+    else:
+        result = guess_info(list(_contained.keys())
+                            + list(_correct.keys())
+                            + list(_incorrect), _freqs, all_words, func_calc_score)
+    return result if result != "" else guess_solve(word_list, _freqs, func_calc_score, debug=debug)
 
+
+def solve(word_list, all_words, nb_guess, _data, strategy="info", frequency="words", debug=False):
+    if frequency == "words":
+        _freqs = get_freqs_words(all_words)
+        func_score = calc_score_words
+    elif frequency == "slots":
+        _freqs = get_freqs_slots(all_words)
+        func_score = calc_score_slots
+    else:
+        print("invalid frequency parameter")
+        return None
+
+    if strategy == "info":
+        return solve_infoguesses(word_list, all_words, _freqs, _data, func_score, debug=debug)
+    elif strategy == "yolo":
+        return solve_infoguesses(word_list, all_words, _freqs, _data, func_score, yolo=True, debug=debug)
+    elif strategy == "solve":
+        return guess_solve(word_list, _freqs, func_score)
+    else:
+        print(f"Invalid strategy. {strategy}")
+        return None
+
+
+def update_wordlist(_cur_wordlist, _data):
+    _correct, _contained, _incorrect = _data
+    new_wordlist = set()
     for word in _cur_wordlist:
         keep = True
 
@@ -108,22 +180,13 @@ def update_wordlist(_cur_wordlist, _correct, _contained, _incorrect):
                     keep = False
 
         for letter in _incorrect:
-            if letter in word:
-                keep = False
+            for i, el in enumerate(word):
+                if el == letter and i not in _correct[letter]:
+                    keep = False
 
         if keep:
             new_wordlist.add(word)
     return new_wordlist
-
-
-def solve(word_list, all_words, _freqs, nb_guess, _correct, _contained, _incorrect):
-    if len((result := guess_solve(word_list, _freqs))) == 1:
-        return result
-    result = guess_info(list(_contained.keys())
-                        + list(_correct.keys())
-                        + list(_incorrect), _freqs, all_words)
-    return result if result != "" else guess_solve(word_list, _freqs)
-    #return guess_solve(word_list, _freqs)
 
 
 def enter_guess(_str):
@@ -135,7 +198,25 @@ def enter_guess(_str):
     time.sleep(3)
 
 
-def update_data(_nb_guess, _guess, _view, _correct, _contained, _incorrect):
+def update_data_simul(_guess, _sol, _data):
+    _correct, _contained, _incorrect = _data
+
+    for i, _letter in enumerate(_guess):
+        # correct letter?
+        if _letter == _sol[i]:
+            _correct[_guess[i]].append(i)
+        # letter contained?
+        elif _letter in _sol:
+            _contained[_guess[i]].append(i)
+        # letter incorrect
+        else:
+            _incorrect += _letter
+
+    return _guess == _sol, (_correct, _contained, _incorrect)
+
+
+def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False):
+    _correct, _contained, _incorrect = _data
     with mss() as sct:
         ss = sct.grab(_view)
         # colour correct
@@ -151,7 +232,9 @@ def update_data(_nb_guess, _guess, _view, _correct, _contained, _incorrect):
             pxl = img.getpixel((int(idx_letter*cell_width), int(_nb_guess*cell_height)))
             results.append(pxl)
         results_colours = list(map(lambda x: COLORS[x], results))
-        print(results_colours)
+
+        if debug:
+            print(results_colours)
 
         # correct guess
         solved = False
@@ -166,7 +249,7 @@ def update_data(_nb_guess, _guess, _view, _correct, _contained, _incorrect):
             elif col == "gray":
                 _incorrect += _guess[i]
 
-        return solved, _correct, _contained, _incorrect
+        return solved, (_correct, _contained, _incorrect)
 
 
 def draw_reading_points():
@@ -226,6 +309,26 @@ def load_words(_str):
             csvreader = csv.reader(f, delimiter=",")
             all_words = list(csvreader)[0]
     return all_words
+
+
+def save_data(_data, _name):
+    with open(f"{_name}.pkl", "wb") as f:
+        pickle.dump(_data, f)
+
+
+def eval_text(_results):
+    for key, val in _results.items():
+        val = np.asarray(val)
+        _misses = np.where(val == 7)
+        nb_misses = len(_misses)
+        print(nb_misses)
+        val = np.delete(val, _misses)
+        avg = np.average(val)
+        print(f"{key} guessed the solution in an average of {avg} guesses and {nb_misses} misses")
+
+
+def eval_graph(_results):
+    pass
 
 
 if __name__ == "__main__":
