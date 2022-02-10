@@ -22,6 +22,7 @@ def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", 
     letters_data = (defaultdict(list), defaultdict(list), "")
 
     needed_guesses = 0
+    guesses = []
     # do the 6 guesses
     for nb_guess in range(6):
         if debug:
@@ -31,6 +32,7 @@ def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", 
                       debug=debug)
         if guess is None:
             break
+        guesses.append(guess)
         if debug:
             print(f"Guessing {guess}")
         if screen_grab:
@@ -51,25 +53,25 @@ def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", 
         if nb_guess == 5:
             needed_guesses = 7
 
-    return needed_guesses
+    return needed_guesses, guesses
 
 
-def simulation(_strats, _freqs, _sols):
+def simulation(_strats, _freqs, _sols, debug=False):
     results = defaultdict(list)
 
-    for i, solution in enumerate(solutions):
-        _l = len(solutions)
+    for i, solution in enumerate(_sols):
+        print(f"{solution}:")
+        _l = len(_sols)
         _ll = len(strategies) * len(frequencies)
         _cnt = 0
         for strat in strategies:
             for freq in frequencies:
-                result = game(all_words, False, strat, freq, solution=solution)
+                result, guesses = game(all_words, False, strat, freq, solution=solution, debug=debug)
                 results[(strat, freq)].append(result)
                 _cnt += 1
-                print(f"Word {i}/{_l}.\tMethod {_cnt}/{_ll}\t{solution} --> {result} guesses ({strat}, {freq})")
-
-    print(results)
-    print(solutions)
+                print(f"Word {i}/{_l}.\tMethod {_cnt}/{_ll}\t{solution} --> {result} guesses ({strat}, {freq})\t" +
+                      " --> ".join(guesses))
+        print()
 
     eval_text(results)
     eval_graph(results)
@@ -84,11 +86,11 @@ if __name__ == "__main__":
     frequencies = ["slots", "words"]
     solutions = all_words.copy()
 
-    #simulation(strategies, frequencies, solutions)
+    simulation(strategies, frequencies, ["elder", "pause"])
     #game(all_words, False, strategies[0], frequencies[0], solution="pause", debug=True)
-    with open("results.pkl", "rb") as f:
+    """with open("results.pkl", "rb") as f:
         data = pickle.load(f)
-    eval_graph(data)
+    eval_graph(data)"""
 
 
 

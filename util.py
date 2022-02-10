@@ -297,15 +297,14 @@ def save_data(_data, _name):
 
 
 def eval_text(_results):
+    print()
     for key, val in _results.items():
         val = np.asarray(val)
         _misses = np.where(val == 7)[0]
         nb_misses = len(_misses)
         val = np.delete(val, _misses)
         avg = np.average(val)
-        print()
         print(f"{key} guessed the solution in an average of {avg} guesses and {nb_misses} misses")
-        print(f"{key}: {val}")
 
 
 def eval_graph(_results):
