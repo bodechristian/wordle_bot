@@ -62,13 +62,6 @@ def calc_score_words(_freqs, _word):
 
 
 def guess_info(used_letters, _freqs, all_words, func_calc_score):
-    """
-    go over list and calculate letter-frequency per slot
-    calculate score for each word
-    return word with max score - but ignore words with letters already used or double letters
-    @param: iterable of possible words
-    @param: iterable of letters that are contained/correct in the target word
-    """
     max_score, max_word = 0, ""
     for word in all_words:
         # ignore words with already investigated letters or without 5 distinct letters
@@ -83,13 +76,6 @@ def guess_info(used_letters, _freqs, all_words, func_calc_score):
 
 
 def guess_info_yolo(used_letters, _freqs, all_words, func_calc_score):
-    """
-    go over list and calculate letter-frequency per slot
-    calculate score for each word
-    return word with max score - but ignore words with letters already used or double letters
-    @param: iterable of possible words
-    @param: iterable of letters that are contained/correct in the target word
-    """
     min_score, min_word = float("inf"), ""
     for word in all_words:
         # ignore words with already investigated letters or without 5 distinct letters
@@ -104,12 +90,6 @@ def guess_info_yolo(used_letters, _freqs, all_words, func_calc_score):
 
 
 def guess_solve(words, _freqs, func_calc_score, debug=False):
-    """
-    go over list and calculate letter-frequency per slot
-    calculate score for each word
-    return word with max score
-    @param: iterable of possible words
-    """
     max_score, max_word = 0, ""
     if debug:
         print(words)
@@ -155,7 +135,7 @@ def solve(word_list, all_words, nb_guess, _data, strategy="info", frequency="wor
     elif strategy == "yolo":
         return solve_infoguesses(word_list, all_words, _freqs, _data, func_score, yolo=True, debug=debug)
     elif strategy == "solve":
-        return guess_solve(word_list, _freqs, func_score)
+        return guess_solve(word_list, _freqs, func_score, debug=debug)
     else:
         print(f"Invalid strategy. {strategy}")
         return None
@@ -319,16 +299,35 @@ def save_data(_data, _name):
 def eval_text(_results):
     for key, val in _results.items():
         val = np.asarray(val)
-        _misses = np.where(val == 7)
+        _misses = np.where(val == 7)[0]
         nb_misses = len(_misses)
-        print(nb_misses)
         val = np.delete(val, _misses)
         avg = np.average(val)
+        print()
         print(f"{key} guessed the solution in an average of {avg} guesses and {nb_misses} misses")
+        print(f"{key}: {val}")
 
 
 def eval_graph(_results):
-    pass
+    nb_cols = 2
+    nb_rows = len(_results.keys()) // nb_cols
+
+    fig, ax = plt.subplots(nb_rows, nb_cols, figsize=(9, 7), sharey="all")
+
+    for i, (key, val) in enumerate(_results.items()):
+        val = np.asarray(val)
+        _misses = np.where(val == 7)
+        nb_misses = len(_misses[0])
+        val = np.delete(val, _misses)
+
+        ax[i // nb_cols, i % nb_cols].set_title(", ".join(key) +
+                                                f"\n{round(np.average(val), 2)} avg.\n{nb_misses} misses")
+        ax[i // nb_cols, i % nb_cols].hist(val, bins=np.linspace(0.5, 6.5, 7), alpha=0.8, ec="black")
+
+    plt.suptitle("Number of guesses needed for different strategies")
+    plt.tight_layout()
+    plt.savefig("temp")
+    plt.show()
 
 
 if __name__ == "__main__":

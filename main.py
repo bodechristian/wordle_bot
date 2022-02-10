@@ -3,8 +3,8 @@ import numpy as np
 from util import *
 
 
-def game(_all_words, screen_grab, style_strategy, style_frequency, _solution="", debug=False):
-    if not screen_grab and (_solution == "" or len(_solution) != 5):
+def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", debug=False):
+    if not screen_grab and (solution == "" or len(solution) != 5):
         print("Error schmerror!!! Given solution is not a valid solution.")
         return None
 
@@ -35,10 +35,10 @@ def game(_all_words, screen_grab, style_strategy, style_frequency, _solution="",
             print(f"Guessing {guess}")
         if screen_grab:
             enter_guess(guess)
-            solved, letters_data = update_data_screengrab(nb_guess, guess, view, letters_data)
+            solved, letters_data = update_data_screengrab(nb_guess, guess, view, letters_data, debug=debug)
         # no scren grab means its a simulation and it took a solution
         else:
-            solved, letters_data = update_data_simul(guess, _solution, letters_data)
+            solved, letters_data = update_data_simul(guess, solution, letters_data)
 
         if solved:
             if debug:
@@ -63,7 +63,7 @@ def simulation(_strats, _freqs, _sols):
         _cnt = 0
         for strat in strategies:
             for freq in frequencies:
-                result = game(all_words, False, strat, freq, _solution=solution)
+                result = game(all_words, False, strat, freq, solution=solution)
                 results[(strat, freq)].append(result)
                 _cnt += 1
                 print(f"Word {i}/{_l}.\tMethod {_cnt}/{_ll}\t{solution} --> {result} guesses ({strat}, {freq})")
@@ -72,6 +72,7 @@ def simulation(_strats, _freqs, _sols):
     print(solutions)
 
     eval_text(results)
+    eval_graph(results)
     save_data(results, "results")
 
 
@@ -81,10 +82,13 @@ if __name__ == "__main__":
 
     strategies = ["solve", "info", "yolo"]
     frequencies = ["slots", "words"]
-    solutions = all_words.copy()[50:350]
+    solutions = all_words.copy()
 
-    simulation(strategies, frequencies, solutions)
-    # game(all_words, True, "yolo", "words", debug=True)
+    #simulation(strategies, frequencies, solutions)
+    #game(all_words, False, strategies[0], frequencies[0], solution="pause", debug=True)
+    with open("results.pkl", "rb") as f:
+        data = pickle.load(f)
+    eval_graph(data)
 
 
 
