@@ -36,6 +36,8 @@ def get_freqs_slots(_words):
     for word in _words:
         for i, letter in enumerate(word):
             freqs[i][letter] += 1
+    """for i in range(5):
+        print(f"Slot {i+1}:\n\t{freqs[i]}")"""
     return freqs
 
 
@@ -175,7 +177,7 @@ def enter_guess(_str):
         pyautogui.press(_letter)
         time.sleep(0.2)
     pyautogui.press("enter")
-    time.sleep(3)
+    time.sleep(4)
 
 
 def update_data_simul(_guess, _sol, _data):
@@ -209,7 +211,8 @@ def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False):
 
         results = []
         for idx_letter in range(5):
-            pxl = img.getpixel((int(idx_letter*cell_width), int(_nb_guess*cell_height)))
+            pxl = img.getpixel((int(idx_letter*cell_width+(1/4)*cell_width),
+                                int(_nb_guess*cell_height+(1/4)*cell_height)))
             results.append(pxl)
         results_colours = list(map(lambda x: COLORS[x], results))
 
@@ -232,23 +235,19 @@ def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False):
         return solved, (_correct, _contained, _incorrect)
 
 
-def draw_reading_points():
+def draw_reading_points(_grid_view):
     with mss() as sct:
-        mon = sct.monitors[1]
-        grid_view = {"left": mon["left"] + 765, 'top': 335, 'width': 340, 'height': 410}
-        ss = sct.grab(grid_view)
+        ss = sct.grab(_grid_view)
         ss = Image.frombytes('RGB', (ss.width, ss.height), ss.rgb, )
         img = pil2cv(ss)
 
-        cell_height, cell_width = grid_view["height"] / 6, grid_view["width"] / 5
+        cell_height, cell_width = _grid_view["height"] / 6, _grid_view["width"] / 5
         for idx_letter in range(5):
             for j in range(6):
-                ss.putpixel((int(idx_letter*cell_width), int(j*cell_height)), (255, 105, 180))
-        plt.imshow(ss)
-        plt.show()
+                ss.putpixel((int(idx_letter*cell_width+(1/4)*cell_width), int(j*cell_height+(1/4)*cell_height)),
+                            (255, 105, 180))
 
-        cv2.imwrite("grid.png", img)
-        plt.imshow(img)
+        plt.imshow(ss)
         plt.show()
 
 
@@ -271,13 +270,14 @@ def find_grid():
         result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
         _, _, _, max_loc = cv2.minMaxLoc(result)
 
-        grid_view = {"left": mon["left"] + max_loc[0], 'top': mon["top"] + max_loc[1], 'width': 340, 'height': 420}
+        grid_view = {"left": mon["left"] + max_loc[0], 'top': mon["top"] + max_loc[1], 'width': template.shape[1],
+                     'height': template.shape[0]}
         return grid_view
 
 
 def test():
-    while True:
-        print(pyautogui.position())
+    _view = find_grid()
+    draw_reading_points(_view)
 
 
 def load_words(_str):

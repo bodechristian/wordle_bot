@@ -86,8 +86,8 @@ if __name__ == "__main__":
     frequencies = ["slots", "words"]
     solutions = all_words.copy()
 
-    simulation(strategies, frequencies, ["elder", "pause"])
-    #game(all_words, False, strategies[0], frequencies[0], solution="pause", debug=True)
+    #simulation(strategies, frequencies, ["cynic"], debug=False)
+    game(all_words, True, strategies[0], frequencies[0], solution="", debug=True)
     """with open("results.pkl", "rb") as f:
         data = pickle.load(f)
     eval_graph(data)"""
