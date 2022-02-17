@@ -3,19 +3,19 @@ import numpy as np
 from util import *
 
 
-def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", debug=False):
-    if not screen_grab and (solution == "" or len(solution) != 5):
+def game(_all_words, screen_play, style_strategy, style_frequency, solution="", debug=False, platform="wordle",
+         view=None):
+    if not screen_play and (solution == "" or len(solution) != 5):
         print("Error schmerror!!! Given solution is not a valid solution.")
         return None
 
     _wordlist = _all_words.copy()
-    view = {}
     # either play it by screen grabbing the browser game
     # or simulating it, then it needs a solution word
-    if screen_grab:
+    if screen_play and view is None:
         # wait a bit and then detect grid and click where the grid has been detected
-        time.sleep(2)
-        view = find_grid()
+        time.sleep(0)
+        view = find_grid(platform=platform)
         pyautogui.click(view["left"], view["top"])
 
     # (correct letters, letters contained, incorrect letters)
@@ -33,11 +33,15 @@ def game(_all_words, screen_grab, style_strategy, style_frequency, solution="", 
         if guess is None:
             break
         guesses.append(guess)
+        # if guess is empty
+        if guess == "":
+            guess = "peach"
         if debug:
             print(f"Guessing {guess}")
-        if screen_grab:
-            enter_guess(guess)
-            solved, letters_data = update_data_screengrab(nb_guess, guess, view, letters_data, debug=debug)
+        if screen_play:
+            enter_guess(guess, platform=platform)
+            solved, letters_data = update_data_screengrab(nb_guess, guess, view, letters_data, debug=debug,
+                                                          platform=platform)
         # no scren grab means its a simulation and it took a solution
         else:
             solved, letters_data = update_data_simul(guess, solution, letters_data)
@@ -64,8 +68,8 @@ def simulation(_strats, _freqs, _sols, debug=False):
         _l = len(_sols)
         _ll = len(strategies) * len(frequencies)
         _cnt = 0
-        for strat in strategies:
-            for freq in frequencies:
+        for strat in _strats:
+            for freq in _freqs:
                 result, guesses = game(all_words, False, strat, freq, solution=solution, debug=debug)
                 results[(strat, freq)].append(result)
                 _cnt += 1
@@ -78,6 +82,14 @@ def simulation(_strats, _freqs, _sols, debug=False):
     save_data(results, "results")
 
 
+def play_br(_words, _strat, _freq):
+    view = find_grid(platform="squabble")
+    pyautogui.click(view["left"], view["top"])
+    while True:
+        game(_words, True, _strat, _freq, solution="", debug=True, platform="squabble", view=view)
+        pyautogui.sleep(1)
+
+
 if __name__ == "__main__":
     # initialize stuff
     all_words = load_words("wordlelist")
@@ -86,11 +98,10 @@ if __name__ == "__main__":
     frequencies = ["slots", "words"]
     solutions = all_words.copy()
 
-    #simulation(strategies, frequencies, ["cynic"], debug=False)
-    game(all_words, True, strategies[0], frequencies[0], solution="", debug=True)
-    """with open("results.pkl", "rb") as f:
-        data = pickle.load(f)
-    eval_graph(data)"""
+    #simulation(strategies, frequencies, ["squid"], debug=False)
+    play_br(all_words, "info", "slots")
+    #game(all_words, True, strategies[1], frequencies[0], solution="", debug=True, platform="wordle")
+    #eval_from_file()
 
 
 

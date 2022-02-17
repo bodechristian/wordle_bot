@@ -16,11 +16,18 @@ def default_colour():
     return "error"
 
 
-COLORS = defaultdict(default_colour, {
-    (83, 141, 78): "green",
-    (181, 159, 59): "yellow",
-    (58, 58, 60): "gray",
-})
+COLORS = {
+    "wordle": defaultdict(default_colour, {
+        (83, 141, 78): "green",
+        (181, 159, 59): "yellow",
+        (58, 58, 60): "gray",
+    }),
+    "squabble": defaultdict(default_colour, {
+        (46, 216, 60): "green",
+        (214, 190, 0): "yellow",
+        (155, 93, 247): "gray",
+    }),
+}
 
 
 def alt_tab():
@@ -171,13 +178,16 @@ def update_wordlist(_cur_wordlist, _data):
     return new_wordlist
 
 
-def enter_guess(_str):
+def enter_guess(_str, platform="wordle"):
     # write guess and press enter, then wait for the websites animation
     for _letter in _str:
         pyautogui.press(_letter)
-        time.sleep(0.2)
+        time.sleep(0)
     pyautogui.press("enter")
-    time.sleep(4)
+    if platform == "wordle":
+        time.sleep(3)
+    elif platform == "squabble":
+        time.sleep(0.5)
 
 
 def update_data_simul(_guess, _sol, _data):
@@ -197,7 +207,7 @@ def update_data_simul(_guess, _sol, _data):
     return _guess == _sol, (_correct, _contained, _incorrect)
 
 
-def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False):
+def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False, platform="wordle"):
     _correct, _contained, _incorrect = _data
     with mss() as sct:
         ss = sct.grab(_view)
@@ -214,7 +224,7 @@ def update_data_screengrab(_nb_guess, _guess, _view, _data, debug=False):
             pxl = img.getpixel((int(idx_letter*cell_width+(1/4)*cell_width),
                                 int(_nb_guess*cell_height+(1/4)*cell_height)))
             results.append(pxl)
-        results_colours = list(map(lambda x: COLORS[x], results))
+        results_colours = list(map(lambda x: COLORS[platform][x], results))
 
         if debug:
             print(results_colours)
@@ -257,7 +267,7 @@ def pil2cv(img):
     return img
 
 
-def find_grid():
+def find_grid(platform="wordle"):
     with mss() as sct:
         # can use sct.monitors[0] for all screens in 1 picture
         # then find the grid
@@ -266,7 +276,7 @@ def find_grid():
         ss = Image.frombytes('RGB', (ss.width, ss.height), ss.rgb, )
         img = pil2cv(ss)
 
-        template = cv2.imread("grid.png")
+        template = cv2.imread(f"grid_{platform}.png")
         result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
         _, _, _, max_loc = cv2.minMaxLoc(result)
 
@@ -327,6 +337,12 @@ def eval_graph(_results):
     plt.tight_layout()
     plt.savefig("temp")
     plt.show()
+
+
+def eval_from_file(file="results.pkl"):
+    with open(file, "rb") as f:
+        data = pickle.load(f)
+    eval_graph(data)
 
 
 if __name__ == "__main__":
