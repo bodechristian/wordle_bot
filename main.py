@@ -90,6 +90,13 @@ def play_br(_words, _strat, _freq):
         pyautogui.sleep(1)
 
 
+def suggest(_data, _all_words, debug=False):
+    sols = update_wordlist(_all_words, _data)
+    _freqs = get_freqs_slots(all_words)
+    func_score = calc_score_slots
+    return solve_elims(sols, _data, 2, _freqs, func_score, debug)
+
+
 if __name__ == "__main__":
     # initialize stuff
     all_words = load_words("wordlelist")
@@ -98,9 +105,13 @@ if __name__ == "__main__":
     frequencies = ["slots", "words"]
     solutions = all_words.copy()
 
-    #simulation(strategies, frequencies, ["squid"], debug=False)
-    play_br(all_words, "info", "slots")
+    #simulation(strategies, frequencies, ["dodge", "coach", "other"], debug=False)
+    #play_br(all_words, "info", "slots")
     #game(all_words, True, strategies[1], frequencies[0], solution="", debug=True, platform="wordle")
+    #print(suggest(({"s":[3], "u":[2], "h":[4], "l":[1]}, {"l":[0]}, "oyarbie"), all_words, debug=True)) # prototype: "a": [2]
+    simulation(["solve", "info", "elims"], frequencies, all_words, debug=False)
+
+
     #eval_from_file()
 
 

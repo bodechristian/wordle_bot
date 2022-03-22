@@ -128,6 +128,40 @@ def solve_infoguesses(word_list, all_words, _freqs, _data, func_calc_score, yolo
     return result if result != "" else guess_solve(word_list, _freqs, func_calc_score, debug=debug)
 
 
+def solve_elims(_word_list, _data, _nb_guess, _freqs, _func_score, debug=False):
+    if _nb_guess == 0:
+        # skips the long calculation on all words, we know the result is "arise"
+        return "arise"
+    max_score, max_words = 0, []
+    for word1 in _word_list:
+        score = 0
+        words = []
+        for word2 in _word_list:
+            for let1 in word1:
+                if let1 in word2 and let1 not in _data[0].keys():
+                    score += 1
+                    words.append(word2)
+                    break
+        if debug:
+            print(f"{word1=}\t{score=}\t{max_score=}\t{max_words=}\t")
+        if score == max_score:
+            max_words.append(word1)
+        elif score > max_score:
+            max_words = [word1]
+            max_score = score
+
+    # handle ties
+    max_score, max_word = 0, ""
+    for _sol in max_words:
+        _score = _func_score(_freqs, _sol)
+        if debug:
+            print(f"{_sol=}\t{_score=}\t{max_score=}\t{max_word=}\t")
+        if _score > max_score:
+            max_score = _score
+            max_word = _sol
+    return max_word
+
+
 def solve(word_list, all_words, nb_guess, _data, strategy="info", frequency="words", debug=False):
     if frequency == "words":
         _freqs = get_freqs_words(all_words)
@@ -145,6 +179,8 @@ def solve(word_list, all_words, nb_guess, _data, strategy="info", frequency="wor
         return solve_infoguesses(word_list, all_words, _freqs, _data, func_score, yolo=True, debug=debug)
     elif strategy == "solve":
         return guess_solve(word_list, _freqs, func_score, debug=debug)
+    elif strategy == "elims":
+        return solve_elims(word_list, _data, nb_guess, _freqs, func_score)
     else:
         print(f"Invalid strategy. {strategy}")
         return None
@@ -170,7 +206,7 @@ def update_wordlist(_cur_wordlist, _data):
 
         for letter in _incorrect:
             for i, el in enumerate(word):
-                if el == letter and i not in _correct[letter]:
+                if el == letter and (i not in _correct or i not in _correct[letter]):
                     keep = False
 
         if keep:
@@ -182,7 +218,7 @@ def enter_guess(_str, platform="wordle"):
     # write guess and press enter, then wait for the websites animation
     for _letter in _str:
         pyautogui.press(_letter)
-        time.sleep(0)
+        #time.sleep(0)
     pyautogui.press("enter")
     if platform == "wordle":
         time.sleep(3)
@@ -319,7 +355,7 @@ def eval_text(_results):
 
 def eval_graph(_results):
     nb_cols = 2
-    nb_rows = len(_results.keys()) // nb_cols
+    nb_rows = ((len(_results.keys())-1) // nb_cols)+1
 
     fig, ax = plt.subplots(nb_rows, nb_cols, figsize=(9, 7), sharey="all")
 
