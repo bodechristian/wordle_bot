@@ -138,7 +138,7 @@ def solve_elims(_word_list, _data, _nb_guess, _freqs, _func_score, debug=False):
         words = []
         for word2 in _word_list:
             for let1 in word1:
-                if let1 in word2 and let1 not in _data[0].keys():
+                if let1 in word2 and let1 not in _data[0].keys() and let1 not in _data[1].keys():
                     score += 1
                     words.append(word2)
                     break
@@ -151,14 +151,16 @@ def solve_elims(_word_list, _data, _nb_guess, _freqs, _func_score, debug=False):
             max_score = score
 
     # handle ties
-    max_score, max_word = 0, ""
+    max_tiescore, max_word = 0, ""
     for _sol in max_words:
         _score = _func_score(_freqs, _sol)
         if debug:
-            print(f"{_sol=}\t{_score=}\t{max_score=}\t{max_word=}\t")
-        if _score > max_score:
-            max_score = _score
+            print(f"{_sol=}\t{_score=}\t{max_tiescore=}\t{max_word=}\t")
+        if _score > max_tiescore:
+            max_tiescore = _score
             max_word = _sol
+    if debug:
+        print(f"\n{max_word} is the best word, it gives information about {max_score}/{len(_word_list)} other words.\n")
     return max_word
 
 
@@ -206,7 +208,7 @@ def update_wordlist(_cur_wordlist, _data):
 
         for letter in _incorrect:
             for i, el in enumerate(word):
-                if el == letter and (i not in _correct or i not in _correct[letter]):
+                if el == letter and (letter not in _correct or i not in _correct[letter]):
                     keep = False
 
         if keep:

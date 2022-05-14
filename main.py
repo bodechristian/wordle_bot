@@ -1,5 +1,3 @@
-import numpy as np
-
 from util import *
 
 
@@ -94,6 +92,7 @@ def suggest(_data, _all_words, debug=False):
     sols = update_wordlist(_all_words, _data)
     _freqs = get_freqs_slots(all_words)
     func_score = calc_score_slots
+    print(sols)
     return solve_elims(sols, _data, 2, _freqs, func_score, debug)
 
 
@@ -101,15 +100,20 @@ if __name__ == "__main__":
     # initialize stuff
     all_words = load_words("wordlelist")
 
-    strategies = ["solve", "info", "yolo"]
+    strategies = ["solve", "info", "yolo", "elims"]
     frequencies = ["slots", "words"]
     solutions = all_words.copy()
 
-    #simulation(strategies, frequencies, ["dodge", "coach", "other"], debug=False)
+    # prototype: "a": [2]
+    data_temp = ({"e":[4]},
+                 {"r":[0], "a":[1], "s":[3]},
+                 "i")
+
+    #simulation(strategies, frequencies, ["dodge", "coach", "other"], debug=False)slate
     #play_br(all_words, "info", "slots")
-    #game(all_words, True, strategies[1], frequencies[0], solution="", debug=True, platform="wordle")
-    #print(suggest(({"s":[3], "u":[2], "h":[4], "l":[1]}, {"l":[0]}, "oyarbie"), all_words, debug=True)) # prototype: "a": [2]
-    simulation(["solve", "info", "elims"], frequencies, all_words, debug=False)
+    #game(all_words, True, strategies[1], frequencies[0], solution="", debug=True, platform="squabble")
+    suggest(data_temp, all_words, debug=True)
+    #simulation(["solve", "info", "elims"], frequencies, all_words[:30], debug=False)
 
 
     #eval_from_file()
